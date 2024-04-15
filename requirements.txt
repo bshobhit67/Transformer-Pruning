@@ -1,0 +1,7 @@
+numpy
+scipy
+cupy
+torch
+tqdm
+transformers
+datasets
