@@ -44,6 +44,9 @@ parser.add_argument("--task_name", type=str, required=True, choices=[
 parser.add_argument("--ckpt_dir", type=str, required=True)
 parser.add_argument("--output_dir", type=str, default=None)
 parser.add_argument("--gpu", type=int, default=0)
+parser.add_argument("--constraint", type=float, required=True,
+    help= "MAC constraint relative to the original model",
+)
 parser.add_argument("--num_samples", type=int, default=2048)
 parser.add_argument("--seed", type=int, default=0)
 
@@ -84,9 +87,11 @@ def main():
     logger.info(f"Seed number: {args.seed}")
 
     # Load the fine-tuned model and the corresponding tokenizer
-    config = AutoConfig.from_pretrained(args.ckpt_dir)
+    config_path = args.ckpt_dir + "/config.json"
+    checkpoint_path = args.ckpt_dir + "/pytorch_model.bin"
+    config = AutoConfig.from_pretrained(config_path)
     model_generator = AutoModelForQuestionAnswering if IS_SQUAD else AutoModelForSequenceClassification
-    model = model_generator.from_pretrained(args.ckpt_dir, config=config)
+    model = model_generator.from_pretrained(checkpoint_path, config=config)
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_name,
         use_fast=True,
@@ -144,7 +149,7 @@ def main():
         sample_dataloader,
     )
 
-    teacher_constraint = get_pruning_schedule(target="mac", num_iter=2)[0]
+    teacher_constraint = get_pruning_schedule(target=args.constraint, num_iter=2)[0]
 
     # initial mask search
     teacher_head_mask, teacher_neuron_mask = search_mac(
