@@ -56,3 +56,9 @@ def compute_importance_scores(grads) :
 
     importance_score = eigenvalues / total_var
     return importance_score.view(l, h)
+
+
+@torch.no_grad()
+def compute_fisher_info(grads):
+    fisher_info = grads.pow(2).sum(dim=0)
+    return fisher_info

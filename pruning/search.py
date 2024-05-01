@@ -1,6 +1,6 @@
 import torch
 
-from pruning.importance import compute_importance_scores
+from pruning.importance import compute_importance_scores, compute_fisher_info
 from metrics.Mac import compute_mac, mac_per_head, mac_per_neuron
 
 
@@ -30,7 +30,7 @@ def search_mac(
     max_mac = mac_constraint * original_mac
 
     head_importance = compute_importance_scores(head_grads)
-    neuron_importance = compute_importance_scores(neuron_grads)
+    neuron_importance = compute_fisher_info(neuron_grads)
 
     # Globally rank heads and neurons
     sorted_head_importance, sorted_head_indicies = head_importance.view(-1).sort(descending=True)
