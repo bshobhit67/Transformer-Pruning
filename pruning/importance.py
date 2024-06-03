@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from utils.arch import apply_neuron_mask
 
 
@@ -48,17 +49,10 @@ def compute_covariance_matrix(grads) :
 
 @torch.no_grad()
 def compute_importance_scores(grads) :
-    batch, l, h = grads.size(0), grads.size(1), grads.size(2)
-    grads = compute_covariance_matrix(grads)
-    eigenvalues = torch.linalg.eigvalsh(grads)
-    eigenvalues = eigenvalues ** 2
-    total_var = eigenvalues.sum()
-
-    importance_score = eigenvalues / total_var
-    return importance_score.view(l, h)
-
-
-@torch.no_grad()
-def compute_fisher_info(grads):
+    grads_copy = grads.squeeze().cpu().numpy()
+    cov_matrix = np.corrcoef(grads_copy, rowvar = False)
+    cov_matrix = torch.from_numpy(cov_matrix)
+    cov_matrix = cov_matrix.to(torch.float32).cuda()
     fisher_info = grads.pow(2).sum(dim=0)
-    return fisher_info
+    importance_score = torch.matmul(fisher_info, cov_matrix)
+    return importance_score
